@@ -1,0 +1,74 @@
+package converter
+
+fun main() {
+    println("Enter what you want to convert (or exit):")
+    var inputline = readLine()!!.trim().toLowerCase().split(" ")
+    while (inputline[0] != "exit") {
+        var inputnumber:Double
+        try { inputnumber = inputline[0].toDouble() } catch (e: Exception) { println("Parse error"); return }
+        var inputUnit = when {
+            inputline[1].contains("degree") -> Unit.find(inputline[2])
+            else -> Unit.find(inputline[1])
+        }
+        var outputUnit = when {
+            inputline[1].contains("degree") -> { 
+                if (inputline[4].contains("degree")) { Unit.find(inputline[5])
+                } else { Unit.find(inputline[4]) }
+            }
+            else -> { if (inputline[3].contains("degree")) { Unit.find(inputline[4])
+                } else { Unit.find(inputline[3]) }
+            }
+        }
+        when {
+            inputUnit.type != outputUnit.type || inputUnit.type == "???" || outputUnit.type == "???" -> {
+                println("Conversion from ${inputUnit.plural} to ${outputUnit.plural} is impossible")
+            }
+            inputUnit.type == "weight" && inputnumber < 0 -> { println("Weight shouldn't be negative") }
+            inputUnit.type == "length" && inputnumber < 0 -> { println("Length shouldn't be negative") }
+            else -> {
+                var solution: Double = outputUnit.convertToOut(inputUnit.convertToBase(inputnumber))
+                println("$inputnumber ${if (inputnumber != 1.0) inputUnit.plural else inputUnit.singular} is " +
+                "$solution ${if (solution != 1.0) outputUnit.plural else outputUnit.singular}")
+            }
+        }
+        println("Enter what you want to convert (or exit):")
+        inputline = readLine()!!.trim().toLowerCase().split(" ")
+    }
+}
+enum class Unit(val conversion: Double, val short: String, val singular: String, val plural: String, 
+val type: String, val short2: String = "", val other: String = "") {
+    M (1.0, "m", "meter", "meters", "length"),
+    KM (1000.0, "km", "kilometer", "kilometers", "length"),
+    CM (0.01, "cm", "centimeter", "centimeters", "length"),
+    MM (0.001, "mm", "millimeter", "millimeters", "length"),
+    MI (1609.35, "mi", "mile", "miles", "length"),
+    YD (0.9144, "yd", "yard", "yards", "length"),
+    FT (0.3048, "ft", "foot", "feet", "length"),
+    IN (0.0254, "in", "inch", "inches", "length"),
+    G (1.0, "g", "gram", "grams", "weight", short2 = "gr"),
+    MG (0.001, "mg", "milligram", "milligrams", "weight"),
+    KG (1000.0, "kg", "kilogram", "kilograms", "weight"),
+    LB (453.592, "lb", "pound", "pounds", "weight"),
+    OZ (28.3495, "oz", "ounce", "ounces", "weight"),
+    K (0.0, "k", "kelvin", "kelvins", "temperature") {
+        override fun convertToBase(input: Double): Double = input - 273.15
+        override fun convertToOut(input: Double): Double = input + 273.15
+    },
+    C (1.0, "dc", "degree celsius", "degrees celsius", "temperature", short2 = "c", other = "celsius"),
+    F (0.0, "df", "degree fahrenheit", "degrees fahrenheit", "temperature", short2 = "f", other = "fahrenheit") {
+        override fun convertToBase(input: Double): Double = (input - 32) * (5.0 / 9.0)
+        override fun convertToOut(input: Double): Double = input * (9.0 / 5.0) + 32
+    },
+    UNKNOWN(0.0, "???", "???", "???", "???");
+    open fun convertToBase(input: Double): Double = input * conversion
+    open fun convertToOut(input: Double): Double = input / conversion
+    companion object {
+        fun find(unittype: String): Unit {
+            values().forEach {
+                if (unittype in arrayOf(it.short, it.short2, it.singular, it.other, it.plural))
+                return it
+            }
+            return UNKNOWN
+        }
+    }
+}
